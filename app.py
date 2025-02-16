@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # Load the model
-MODEL_PATH = "best_model.h5"
+MODEL_PATH = "cnn.h5"
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
 except Exception as e:
