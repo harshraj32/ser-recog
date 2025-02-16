@@ -29,8 +29,19 @@ def preprocess_audio(file: bytes):
     try:
         y, sr = librosa.load(io.BytesIO(file), sr=22050)  # Load audio
         mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)  # Extract MFCCs
-        mfccs = np.mean(mfccs, axis=1)  # Take mean across time
-        return np.expand_dims(mfccs, axis=0)  # Add batch dimension
+        
+        # Ensure the second dimension (time steps) is at least 130
+        if mfccs.shape[1] < 130:
+            pad_width = 130 - mfccs.shape[1]
+            mfccs = np.pad(mfccs, ((0, 0), (0, pad_width)), mode='constant')
+        else:
+            mfccs = mfccs[:, :130]  # Trim to 130 time steps
+
+        # Reshape to (1, 40, 130, 1) -> Matching model input
+        mfccs = np.expand_dims(mfccs, axis=-1)  # Add channel dimension
+        mfccs = np.expand_dims(mfccs, axis=0)   # Add batch dimension
+
+        return mfccs
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing audio: {str(e)}")
 
