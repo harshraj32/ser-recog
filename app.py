@@ -49,6 +49,17 @@ def preprocess_audio(file: bytes):
 async def health_check():
     return {"status": "healthy", "model_loaded": model is not None}
 
+class_labels = {
+    '01': 'neutral',
+    '02': 'calm',
+    '03': 'happy',
+    '04': 'sad',
+    '05': 'angry',
+    '06': 'fearful',
+    '07': 'disgust',
+    '08': 'surprised'
+}
+
 @app.post("/predict")
 async def predict_audio(file: UploadFile = File(...)):
     if not model:
@@ -62,10 +73,14 @@ async def predict_audio(file: UploadFile = File(...)):
         processed_audio = preprocess_audio(audio_data)
         prediction = model.predict(processed_audio)
         class_idx = np.argmax(prediction)
+        
+        # Map class index to label
+        class_label = class_labels[str(class_idx + 1).zfill(2)]  # Adding 1 to match the class labels
         return {
-            "class": int(class_idx),
+            "class": class_label,
             "confidence": float(np.max(prediction)),
             "predictions": prediction.tolist()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
